@@ -70,7 +70,7 @@ class Network(object):
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
             if test_data:
-                print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test));
+                print("Epoch {} : {} / {}".format(j,self.evaluate(test_data), n_test));
             else:
                 print("Epoch {} complete".format(j))
 
@@ -148,8 +148,79 @@ def sigmoid_prime(z):
     """Derivative of the sigmoid function."""
     return sigmoid(z)*(1-sigmoid(z))
 
-import mnist_loader
+def vectorized_result(j):
+    """Return a 10-dimensional unit vector with a 1.0 in the jth
+    position and zeroes elsewhere.  This is used to convert a digit
+    (0...9) into a corresponding desired output from the neural
+    network."""
+    e = np.zeros((10, 1))
+    e[int(j * 10)] = 1.0
+    return e
+
+
+def load_data_wrapper(size):
+    """Return a tuple containing ``(training_data, validation_data,
+    test_data)``. Based on ``load_data``, but the format is more
+    convenient for use in our implementation of neural networks.
+    In particular, ``training_data`` is a list containing 50,000
+    2-tuples ``(x, y)``.  ``x`` is a 784-dimensional numpy.ndarray
+    containing the input image.  ``y`` is a 10-dimensional
+    numpy.ndarray representing the unit vector corresponding to the
+    correct digit for ``x``.
+    ``validation_data`` and ``test_data`` are lists containing 10,000
+    2-tuples ``(x, y)``.  In each case, ``x`` is a 784-dimensional
+    numpy.ndarry containing the input image, and ``y`` is the
+    corresponding classification, i.e., the digit values (integers)
+    corresponding to ``x``.
+    Obviously, this means we're using slightly different formats for
+    the training data and the validation / test data.  These formats
+    turn out to be the most convenient for use in our neural network
+    code."""
+
+    # np.random.seed(1000)
+    nums = [float(x) / 10 for x in np.random.randint(0, 10, size)]
+    data = [([x*100,
+             np.sqrt(x),
+             np.exp(x) % 1,
+             -x,
+             x - np.sqrt(x),
+             x**2],
+             x) for x in nums]
+    # np.random.seed(None)
+    np.random.shuffle(data)
+    data = (np.stack([x for (x, y) in data]),  np.stack([y for (x, y) in data]))
+    tr_d = (data[0][0:int(size * 0.8)], data[1][0:int(size * 0.8)])
+    va_d = (data[0][int(size * 0.8): int(size * 0.9)], data[1][int(size * 0.8): int(size * 0.9)])
+    te_d = (data[0][int(size * 0.9): size], data[1][int(size * 0.9): size])
+    # training_inputs = [np.reshape(x, (len(data[0][0]), 1)) for (x, y) in tr_d]
+    # training_results = [vectorized_result(y) for (x, y) in tr_d]
+    # training_data = zip(training_inputs, training_results)
+    # # validation_inputs = [np.reshape(x, (10, 1)) for x in va_d[0]]
+    # validation_data = va_d#zip(validation_inputs, va_d[1])
+    # # test_inputs = [np.reshape(x, (10, 1)) for (x, y) in te_d]
+    # test_data = te_d
+    training_inputs = [np.reshape(x, (len(data[0][0]), 1)) for x in tr_d[0]]
+    training_results = [vectorized_result(y) for y in tr_d[1]]
+    training_data = zip(training_inputs, training_results)
+    validation_inputs = [np.reshape(x, (len(data[0][0]), 1)) for x in va_d[0]]
+    validation_data = zip(validation_inputs, va_d[1])
+    test_inputs = [np.reshape(x, (len(data[0][0]), 1)) for x in te_d[0]]
+    test_data = zip(test_inputs, te_d[1])
+    hw = pd.read_csv("hw.csv")
+    # hw["W"] = hw["Weight(Pounds)"]
+    # hw["H"] = hw["Height(Inches)"]
+    # hw.drop(columns=["Weight(Pounds)", "Height(Inches)"], inplace=True)
+    # hw["hn"] = [(x - hw.H.mean()) / hw.H.std() for x in hw.H]
+    # hw["wn"] = [(x - hw.W.mean()) / hw.W.std() for x in hw.W]
+    # hw.drop(columns=["W", "H"], inplace=True)
+    hw["wn"].co
+
+    return (training_data, validation_data, test_data)
+
+import pandas as pd
+
 if __name__ == '__main__':
-    training_data, validation_data, test_data = mnist_loader.load_data_wrapper()
-    net = Network([784, 30, 10])
-    net.SGD(training_data, 30, 10, 3.0, test_data=test_data)
+    df_train = pd.read_csv('train.csv')
+    training_data, validation_data, test_data = load_data_wrapper(10000)
+    net = Network([6, 100, 100, 10])
+    net.SGD(training_data, 500, 10, 3, test_data=test_data)
